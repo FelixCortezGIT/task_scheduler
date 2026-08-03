@@ -21,7 +21,7 @@ class TrayApp:
     def _setup_window(self):
         self.window = tk.Tk()
         self.window.title("task scheduler")
-        self.window.geometry("900x400")
+        self.window.geometry("940x280")
         self.window.withdraw()  # window is hidden
         self.window.protocol("WM_DELETE_WINDOW", self.hide_window)  # X = hide, but not close app
 

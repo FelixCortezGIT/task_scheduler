@@ -7,50 +7,79 @@ class Dashboard(ttk.Frame):
         super().__init__(parent)
         self.controller = controller
 
+        style = ttk.Style()
+        style.theme_use("clam")
+
         button_frame = ttk.Frame(self)
-        button_frame.pack(side="top", fill="x", padx=10, pady=10)
+        button_frame.pack(side="top", fill="x", padx=5, pady=5)
 
-        refresh_btn = ttk.Button(button_frame, text="refresh", command=self.refresh)
-        refresh_btn.pack(side="left", padx=(0, 5))
+        self.current_view = "work"
 
-        add_btn = ttk.Button(button_frame, text="add Task", command=self.open_add_form)
-        add_btn.pack(side="left", padx=5)
+        add_btn = ttk.Button(button_frame, text="add new", command=self.open_add_form)
+        add_btn.pack(side="left", padx=(0, 2))
+
+        work_btn = ttk.Button(button_frame, text="work mode", command=self.show_work_mode)
+        work_btn.pack(side="left", padx=2)
+
+        show_all_btn = ttk.Button(button_frame, text="show all", command=self.show_all_tasks)
+        show_all_btn.pack(side="left", padx=2)
 
         self.tree = ttk.Treeview(
             self,
-            columns=("id", "name", "description", "status", "priority", "deadline"),
+            columns=("id", "name", "description", "created_at", "updated_at", "status", "priority", "deadline"),
             show="headings"
         )
 
-        column_config = {
+        self.tree.tag_configure("active", background="#FFEB3B")    # žltá
+        self.tree.tag_configure("on_hold", background="#99D8D8")   # svetlomodrá
+        self.tree.tag_configure("closed", background="#D9D9D9")    # sivá
+
+        self.column_config = {
             "id":          {"width": 40,  "anchor": "center"},
-            "name":        {"width": 180, "anchor": "w"},
-            "description": {"width": 320, "anchor": "w"},
+            "name":        {"width": 130, "anchor": "w"},
+            "description": {"width": 200, "anchor": "w"},
+            "created_at":  {"width": 130, "anchor": "center"},
+            "updated_at":  {"width": 130, "anchor": "center"},
             "status":      {"width": 80,  "anchor": "center"},
             "priority":    {"width": 80,  "anchor": "center"},
-            "deadline":    {"width": 140, "anchor": "center"},
+            "deadline":    {"width": 130, "anchor": "center"},
         }
 
-        for col, cfg in column_config.items():
-            self.tree.heading(col, text=col.capitalize())
+        self.sort_column = None
+        self.sort_reverse = False
+
+        for col, cfg in self.column_config.items():
+            self.tree.heading(col, text=col.capitalize(), command=lambda c=col: self.sort_by(c))
             self.tree.column(col, width=cfg["width"], anchor=cfg["anchor"])
 
-        self.tree.pack(fill="both", expand=True, padx=10, pady=10)
+        self.tree.pack(fill="both", expand=True, padx=5, pady=(0, 5))
         self.tree.bind("<Double-1>", self.open_edit_form)
         self.tree.bind("<Delete>", self.delete_selected)
 
+        self.refresh()
+
+    def show_work_mode(self):
+        self.current_view = "work"
+        self.refresh()
+
+    def show_all_tasks(self):
+        self.current_view = "all"
         self.refresh()
 
     def refresh(self):
         for row in self.tree.get_children():
             self.tree.delete(row)
 
-        tasks = self.controller.list_tasks()
+        if self.current_view == "all":
+            tasks = self.controller.list_tasks(show_all=True)
+        else:
+            tasks = self.controller.list_tasks()
+
         for task in tasks:
-            task_id, name, description, status, priority, deadline, *_ = task
+            task_id, name, description, status, priority, deadline, created_at, updated_at = task
             self.tree.insert("", "end", values=(
-                task_id, name, description or "-", status, priority, deadline or "-"
-            ))
+                task_id, name, description or "-", created_at, updated_at, status, priority, deadline or "-"
+            ), tags=(status,))
 
     def open_add_form(self):
         form = tk.Toplevel(self)
@@ -106,7 +135,7 @@ class Dashboard(ttk.Frame):
             return
 
         values = self.tree.item(selected[0], "values")
-        task_id, name, description, status, priority, deadline = values
+        task_id, name, description, created_at, updated_at, status, priority, deadline = values
 
         form = tk.Toplevel(self)
         form.title(f"Edit Task #{task_id}")
@@ -167,6 +196,30 @@ class Dashboard(ttk.Frame):
 
         submit_btn = ttk.Button(form, text="confirm", command=submit)
         submit_btn.pack(pady=15)
+
+    def sort_by(self, col):
+        if self.sort_column == col:
+            self.sort_reverse = not self.sort_reverse
+        else:
+            self.sort_column = col
+            self.sort_reverse = False
+
+        items = [(self.tree.set(k, col), k) for k in self.tree.get_children("")]
+
+        def sort_key(item):
+            value = item[0]
+            return (value is None or value in ("", "-"), value)
+
+        items.sort(key=sort_key, reverse=self.sort_reverse)
+
+        for index, (_, k) in enumerate(items):
+            self.tree.move(k, "", index)
+
+        for c in self.column_config:
+            arrow = ""
+            if c == self.sort_column:
+                arrow = " ▲" if not self.sort_reverse else " ▼"
+            self.tree.heading(c, text=c.capitalize() + arrow)
 
     def delete_selected(self, event=None):
         selected = self.tree.selection()

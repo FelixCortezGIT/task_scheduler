@@ -20,13 +20,15 @@ class Database:
             conn.commit()
             return task_id
 
-    def get_tasks(self, status_filter=None):
+    def get_tasks(self, status_filter=None, show_all=False):
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            if status_filter:
-                cursor.execute("SELECT * FROM tasks WHERE status = ? ORDER BY created_at ASC", (status_filter,))
+            if show_all:
+                cursor.execute("SELECT * FROM tasks ORDER BY deadline ASC")
+            elif status_filter:
+                cursor.execute("SELECT * FROM tasks WHERE status = ? ORDER BY deadline ASC", (status_filter,))
             else:
-                cursor.execute("SELECT * FROM tasks WHERE status != 'closed' ORDER BY created_at ASC")
+                cursor.execute("SELECT * FROM tasks WHERE status != 'closed' ORDER BY deadline ASC")
             return cursor.fetchall()
 
     def update_task(self, task_id, field, new_value):

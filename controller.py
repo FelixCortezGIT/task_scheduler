@@ -16,8 +16,8 @@ class TaskController:
     def remove_task(self, task_id):
         return self.db.delete_task(task_id)
 
-    def list_tasks(self, status_filter=None):
-        return self.db.get_tasks(status_filter)
+    def list_tasks(self, status_filter=None, show_all=False):
+        return self.db.get_tasks(status_filter, show_all)
 
     def get_task_logs(self, task_id):
         return self.db.get_task_logs(task_id)
