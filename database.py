@@ -64,6 +64,19 @@ class Database:
             cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
             conn.commit()
 
+    def get_task_logs(self, task_id):
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """SELECT id, event_type, old_value, new_value, created_at
+                FROM task_logs WHERE task_id = ?
+                ORDER BY created_at
+                """,
+                (task_id,)
+            )
+            return cursor.fetchall()
+
+
 ###
 ### create tables
 ###
