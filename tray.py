@@ -6,6 +6,10 @@ import threading
 from view.dashboard import Dashboard
 from controller import TaskController
 import os
+from scheduler import Scheduler
+from view.popup import show_deadline_popup
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.db")
 
 class TrayApp:
     def __init__(self):
@@ -24,6 +28,7 @@ class TrayApp:
         controller = TaskController("tasks.db")
         self.dashboard = Dashboard(self.window, controller)
         self.dashboard.pack(fill="both", expand=True)
+        self.scheduler = Scheduler(DB_PATH, on_deadline_reached=self._handle_deadline)
 
     def _create_icon_image(self):
         # placeholder icon (blue square)
@@ -54,6 +59,7 @@ class TrayApp:
             self.hide_window()
 
     def quit_app(self, icon=None, item=None):
+        self.scheduler.stop()
         keyboard.unhook_all()
         self.tray_icon.stop()
         self.window.quit()
@@ -66,7 +72,11 @@ class TrayApp:
     def run(self):
         threading.Thread(target=self._hotkey_listener, daemon=True).start()
         threading.Thread(target=self.tray_icon.run, daemon=True).start()
+        self.scheduler.start()
         self.window.mainloop()
+
+    def _handle_deadline(self, task):
+        self.window.after(0, lambda: show_deadline_popup(self.window, task))
 
 if __name__ == "__main__":
     app = TrayApp()
