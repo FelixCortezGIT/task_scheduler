@@ -4,17 +4,17 @@ import sqlite3
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.db")
 
-def print_tasks(tasks):
-    if not tasks:
-        print("no task")
-        return
-    print(f"\n{'ID':<5} {'name':<25} {'description':<25} {'status':<12} {'priority':<10} {'deadline':<20}")
-    print("-" * 98)
-    for task in tasks:
-        # task = (id, name, description, status, priority, deadline, created_at, updated_at)
-        task_id, name, desc, status, priority, deadline, *_ = task
-        deadline_str = deadline if deadline else "-"
-        print(f"{task_id:<5} {name[:24]:<25} {desc[:24]:<25} {status:<12} {priority:<10} {deadline_str:<20}")
+# def print_tasks(tasks):
+#     if not tasks:
+#         print("no task")
+#         return
+#     print(f"\n{'ID':<5} {'name':<25} {'description':<25} {'status':<12} {'priority':<10} {'deadline':<20}")
+#     print("-" * 98)
+#     for task in tasks:
+#         # task = (id, name, description, status, priority, deadline, created_at, updated_at)
+#         task_id, name, desc, status, priority, deadline, *_ = task
+#         deadline_str = deadline if deadline else "-"
+#         print(f"{task_id:<5} {name[:24]:<25} {desc[:24]:<25} {status:<12} {priority:<10} {deadline_str:<20}")
 
 def main():
     db = Database(DB_PATH)
@@ -44,8 +44,8 @@ def main():
 #     print(f"task {task_id} deleted")
 
 # show all tasks
-    tasks = db.get_tasks()
-    print_tasks(tasks)
+#     tasks = db.get_tasks()
+#     print_tasks(tasks)
 
 # show logs for task
 #     task_id = 2

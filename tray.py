@@ -3,6 +3,8 @@ from PIL import Image, ImageDraw
 import tkinter as tk
 import keyboard
 import threading
+from view.dashboard import Dashboard
+from controller import TaskController
 
 class TrayApp:
     def __init__(self):
@@ -14,9 +16,13 @@ class TrayApp:
     def _setup_window(self):
         self.window = tk.Tk()
         self.window.title("task scheduler")
-        self.window.geometry("400x300")
+        self.window.geometry("900x400")
         self.window.withdraw()  # window is hidden
         self.window.protocol("WM_DELETE_WINDOW", self.hide_window)  # X = hide, but not close app
+
+        controller = TaskController("tasks.db")
+        self.dashboard = Dashboard(self.window, controller)
+        self.dashboard.pack(fill="both", expand=True)
 
     def _create_icon_image(self):
         # placeholder icon (blue square)
