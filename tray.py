@@ -5,6 +5,7 @@ import keyboard
 import threading
 from view.dashboard import Dashboard
 from controller import TaskController
+import os
 
 class TrayApp:
     def __init__(self):
@@ -53,8 +54,10 @@ class TrayApp:
             self.hide_window()
 
     def quit_app(self, icon=None, item=None):
+        keyboard.unhook_all()
         self.tray_icon.stop()
         self.window.quit()
+        os._exit(0)
 
     def _hotkey_listener(self):
         keyboard.add_hotkey("ctrl+shift", self.toggle_window)
