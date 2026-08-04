@@ -4,6 +4,8 @@ import sqlite3
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.db")
 
+# pip install -r requirements.txt
+
 # def print_tasks(tasks):
 #     if not tasks:
 #         print("no task")
