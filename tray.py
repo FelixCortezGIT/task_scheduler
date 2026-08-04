@@ -6,13 +6,23 @@ import threading
 from view.dashboard import Dashboard
 from controller import TaskController
 import os
+import sys
 from scheduler import Scheduler
 from view.popup import show_deadline_popup
+from database import Database
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tasks.db")
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DB_PATH = os.path.join(BASE_DIR, "tasks.db")
 
 class TrayApp:
     def __init__(self):
+        db = Database(DB_PATH)
+        if not os.path.exists(DB_PATH):
+            db.init_db()
         self.window = None
         self.tray_icon = None
         self._setup_window()
@@ -25,7 +35,7 @@ class TrayApp:
         self.window.withdraw()  # window is hidden
         self.window.protocol("WM_DELETE_WINDOW", self.hide_window)  # X = hide, but not close app
 
-        controller = TaskController("tasks.db")
+        controller = TaskController(DB_PATH)
         self.dashboard = Dashboard(self.window, controller)
         self.dashboard.pack(fill="both", expand=True)
         self.scheduler = Scheduler(DB_PATH, on_deadline_reached=self._handle_deadline)
