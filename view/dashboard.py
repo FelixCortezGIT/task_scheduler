@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as ttk
 from tkinter import messagebox
 
 class Dashboard(ttk.Frame):
@@ -8,31 +8,36 @@ class Dashboard(ttk.Frame):
         self.controller = controller
 
         style = ttk.Style()
-        style.theme_use("clam")
+        style.theme_use("sandstone")  # light themes: "flatly", "cosmo", "morph", "litera", "journal", "lumen"
+        # light themes: "minty", "pulse", "sandstone", "united", "yeti", "simplex", "cerculean"
+        # dark themes: "darkly", "cyborg", "superhero", "solar", "vapor"
 
         button_frame = ttk.Frame(self)
         button_frame.pack(side="top", fill="x", padx=5, pady=5)
 
         self.current_view = "work"
 
-        add_btn = ttk.Button(button_frame, text="add new", command=self.open_add_form)
+        add_btn = ttk.Button(button_frame, text="add new", command=self.open_add_form, bootstyle="success")
         add_btn.pack(side="left", padx=(0, 2))
 
-        work_btn = ttk.Button(button_frame, text="work mode", command=self.show_work_mode)
+        work_btn = ttk.Button(button_frame, text="work mode", command=self.show_work_mode, bootstyle="primary")
         work_btn.pack(side="left", padx=2)
 
-        show_all_btn = ttk.Button(button_frame, text="show all", command=self.show_all_tasks)
+        show_all_btn = ttk.Button(button_frame, text="show all", command=self.show_all_tasks, bootstyle="secondary")
         show_all_btn.pack(side="left", padx=2)
 
         self.tree = ttk.Treeview(
             self,
             columns=("id", "name", "description", "created_at", "updated_at", "status", "priority", "deadline"),
-            show="headings"
+            show="headings",
+            bootstyle="primary"
         )
 
-        self.tree.tag_configure("active", background="#FFEB3B")    # žltá
-        self.tree.tag_configure("on_hold", background="#99D8D8")   # svetlomodrá
-        self.tree.tag_configure("closed", background="#D9D9D9")    # sivá
+        # ttkbootstrap themes have dark backgrounds, so pair each highlight
+        # with a dark foreground to keep the text readable.
+        self.tree.tag_configure("active", background="#FFEB3B", foreground="#1a1a1a")
+        self.tree.tag_configure("on_hold", background="#99D8D8", foreground="#1a1a1a")
+        self.tree.tag_configure("closed", background="#D9D9D9", foreground="#1a1a1a")
 
         self.column_config = {
             "id":          {"width": 40,  "anchor": "center"},
@@ -81,36 +86,60 @@ class Dashboard(ttk.Frame):
                 task_id, name, description or "-", created_at, updated_at, status, priority, deadline or "-"
             ), tags=(status,))
 
+    def _themed_text_widget(self, parent, **kwargs):
+        """tk.Text isn't a ttk widget, so ttkbootstrap can't theme it directly.
+        Pull the current theme's colors so it doesn't look like a plain white
+        box sitting inside a dark-themed form."""
+        colors = ttk.Style().colors
+        return tk.Text(
+            parent,
+            bg=colors.inputbg,
+            fg=colors.inputfg,
+            insertbackground=colors.inputfg,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=colors.border,
+            **kwargs
+        )
+
     def open_add_form(self):
-        form = tk.Toplevel(self)
+        form = ttk.Toplevel(self)
         form.title("Add Task")
-        form.geometry("350x380")
+        form.geometry("560x250")
         form.grab_set()  # will block interaction with main window until form is open
 
-        ttk.Label(form, text="Name*").pack(anchor="w", padx=10, pady=(10, 0))
-        name_entry = ttk.Entry(form, width=40)
-        name_entry.pack(padx=10)
+        name_frame = ttk.Frame(form)
+        name_frame.pack(fill="x", padx=10, pady=(10, 0))
+        ttk.Label(name_frame, text="Name*", width=12).pack(side="left")
+        name_entry = ttk.Entry(name_frame)
+        name_entry.pack(side="left", fill="x", expand=True)
 
-        ttk.Label(form, text="Description").pack(anchor="w", padx=10, pady=(10, 0))
-        desc_entry = tk.Text(form, width=40, height=4)
-        desc_entry.pack(padx=10)
+        desc_frame = ttk.Frame(form)
+        desc_frame.pack(fill="x", padx=10, pady=(10, 0))
+        ttk.Label(desc_frame, text="Description", width=12).pack(side="left", anchor="n")
+        desc_entry = self._themed_text_widget(desc_frame, height=4)
+        desc_entry.pack(side="left", fill="x", expand=True)
 
-        ttk.Label(form, text="Status*").pack(anchor="w", padx=10, pady=(10, 0))
+        row_frame = ttk.Frame(form)
+        row_frame.pack(fill="x", padx=10, pady=(10, 0))
+
+        ttk.Label(row_frame, text="Status*").grid(row=0, column=0, sticky="w")
         status_var = tk.StringVar(value="active")
-        status_dropdown = ttk.Combobox(form, textvariable=status_var, values=["active", "on_hold", "closed"], state="readonly")
-        status_dropdown.pack(padx=10)
+        status_dropdown = ttk.Combobox(row_frame, textvariable=status_var, values=["active", "on_hold", "closed"], state="readonly", width=10)
+        status_dropdown.grid(row=0, column=1, sticky="w", padx=(4, 16))
 
-        ttk.Label(form, text="Priority").pack(anchor="w", padx=10, pady=(10, 0))
+        ttk.Label(row_frame, text="Priority").grid(row=0, column=2, sticky="w")
         priority_var = tk.StringVar(value="medium")
-        priority_dropdown = ttk.Combobox(form, textvariable=priority_var, values=["medium", "high"], state="readonly")
-        priority_dropdown.pack(padx=10)
+        priority_dropdown = ttk.Combobox(row_frame, textvariable=priority_var, values=["medium", "high"], state="readonly", width=10)
+        priority_dropdown.grid(row=0, column=3, sticky="w", padx=(4, 16))
 
-        ttk.Label(form, text="Deadline (YYYY-MM-DD HH:MM)").pack(anchor="w", padx=10, pady=(10, 0))
-        deadline_entry = ttk.Entry(form, width=40)
-        deadline_entry.pack(padx=10)
+        ttk.Label(row_frame, text="Deadline").grid(row=0, column=4, sticky="w")
+        deadline_entry = ttk.Entry(row_frame, width=24)
+        deadline_entry.grid(row=0, column=5, sticky="w", padx=(4, 0))
+        ttk.Label(row_frame, text="YYYY-MM-DD HH:MM", bootstyle="secondary").grid(row=1, column=5, sticky="w", padx=(4, 0))
 
-        error_label = ttk.Label(form, text="", foreground="red")
-        error_label.pack(padx=10, pady=(5, 0))
+        error_label = ttk.Label(form, text="", bootstyle="danger")
+        error_label.pack(padx=10, pady=(2, 0))
 
         def submit():
             name = name_entry.get()
@@ -126,8 +155,8 @@ class Dashboard(ttk.Frame):
             except ValueError as e:
                 error_label.config(text=str(e))
 
-        submit_btn = ttk.Button(form, text="Confirm", command=submit)
-        submit_btn.pack(pady=15)
+        submit_btn = ttk.Button(form, text="Confirm", command=submit, bootstyle="success")
+        submit_btn.pack(pady=(15, 10))
 
     def open_edit_form(self, event=None):
         selected = self.tree.selection()
@@ -137,38 +166,46 @@ class Dashboard(ttk.Frame):
         values = self.tree.item(selected[0], "values")
         task_id, name, description, created_at, updated_at, status, priority, deadline = values
 
-        form = tk.Toplevel(self)
+        form = ttk.Toplevel(self)
         form.title(f"Edit Task #{task_id}")
-        form.geometry("350x380")
+        form.geometry("560x250")
         form.grab_set()
 
-        ttk.Label(form, text="Name*").pack(anchor="w", padx=10, pady=(10, 0))
-        name_entry = ttk.Entry(form, width=40)
+        name_frame = ttk.Frame(form)
+        name_frame.pack(fill="x", padx=10, pady=(10, 0))
+        ttk.Label(name_frame, text="Name*", width=12).pack(side="left")
+        name_entry = ttk.Entry(name_frame)
         name_entry.insert(0, name)
-        name_entry.pack(padx=10)
+        name_entry.pack(side="left", fill="x", expand=True)
 
-        ttk.Label(form, text="Description").pack(anchor="w", padx=10, pady=(10, 0))
-        desc_entry = tk.Text(form, width=40, height=4)
+        desc_frame = ttk.Frame(form)
+        desc_frame.pack(fill="x", padx=10, pady=(10, 0))
+        ttk.Label(desc_frame, text="Description", width=12).pack(side="left", anchor="n")
+        desc_entry = self._themed_text_widget(desc_frame, height=4)
         desc_entry.insert("1.0", "" if description == "-" else description)
-        desc_entry.pack(padx=10)
+        desc_entry.pack(side="left", fill="x", expand=True)
 
-        ttk.Label(form, text="Status*").pack(anchor="w", padx=10, pady=(10, 0))
+        row_frame = ttk.Frame(form)
+        row_frame.pack(fill="x", padx=10, pady=(10, 0))
+
+        ttk.Label(row_frame, text="Status*").grid(row=0, column=0, sticky="w")
         status_var = tk.StringVar(value=status)
-        status_dropdown = ttk.Combobox(form, textvariable=status_var, values=["active", "on_hold", "closed"], state="readonly")
-        status_dropdown.pack(padx=10)
+        status_dropdown = ttk.Combobox(row_frame, textvariable=status_var, values=["active", "on_hold", "closed"], state="readonly", width=10)
+        status_dropdown.grid(row=0, column=1, sticky="w", padx=(4, 16))
 
-        ttk.Label(form, text="Priority").pack(anchor="w", padx=10, pady=(10, 0))
+        ttk.Label(row_frame, text="Priority").grid(row=0, column=2, sticky="w")
         priority_var = tk.StringVar(value=priority)
-        priority_dropdown = ttk.Combobox(form, textvariable=priority_var, values=["medium", "high"], state="readonly")
-        priority_dropdown.pack(padx=10)
+        priority_dropdown = ttk.Combobox(row_frame, textvariable=priority_var, values=["medium", "high"], state="readonly", width=10)
+        priority_dropdown.grid(row=0, column=3, sticky="w", padx=(4, 16))
 
-        ttk.Label(form, text="Deadline (YYYY-MM-DD HH:MM)").pack(anchor="w", padx=10, pady=(10, 0))
-        deadline_entry = ttk.Entry(form, width=40)
+        ttk.Label(row_frame, text="Deadline").grid(row=0, column=4, sticky="w")
+        deadline_entry = ttk.Entry(row_frame, width=24)
         deadline_entry.insert(0, "" if deadline == "-" else deadline)
-        deadline_entry.pack(padx=10)
+        deadline_entry.grid(row=0, column=5, sticky="w", padx=(4, 0))
+        ttk.Label(row_frame, text="YYYY-MM-DD HH:MM", bootstyle="secondary").grid(row=1, column=5, sticky="w", padx=(4, 0))
 
-        error_label = ttk.Label(form, text="", foreground="red")
-        error_label.pack(padx=10, pady=(5, 0))
+        error_label = ttk.Label(form, text="", bootstyle="danger")
+        error_label.pack(padx=10, pady=(2, 0))
 
         def submit():
             new_name = name_entry.get().strip()
@@ -194,8 +231,8 @@ class Dashboard(ttk.Frame):
             except ValueError as e:
                 error_label.config(text=str(e))
 
-        submit_btn = ttk.Button(form, text="confirm", command=submit)
-        submit_btn.pack(pady=15)
+        submit_btn = ttk.Button(form, text="confirm", command=submit, bootstyle="success")
+        submit_btn.pack(pady=(15, 10))
 
     def sort_by(self, col):
         if self.sort_column == col:
